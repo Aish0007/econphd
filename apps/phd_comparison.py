@@ -47,9 +47,14 @@ available_categories = all_tiers['Ranking'].unique()
 available_years = all_tiers['Year'].unique()
 available_inst_years = cd['Year'].unique()
 available_uni = np.append(available_uni, 'All')
+available_uni = np.sort(available_uni)
 new_cat = ['All', 'Econ_Acad', 'All_Academia', 'All_Private']
 available_categories = np.append(available_categories, new_cat)
+available_categories= np.sort(available_categories)
+available_sort_categories = np.delete(available_categories, [3])
+available_trend_categories = np.delete(available_categories, [4,5,8])
 available_years = np.append(available_years, 'All')
+available_years = np.sort(available_years)[::-1]
 
 all_tiers = all_tiers.set_index("University")
 cd = cd.set_index("University")
@@ -71,7 +76,8 @@ layout = html.Div([
 
     
         # Choose between percentages and numbers
-        dbc.Row([dbc.Col(html.Div(
+        dbc.Row([dbc.Col(html.Div(children=[
+            html.Label(['Numbers or Percentages:'], style={'font-weight': 'bold', "text-align": "center"}),
             dcc.Dropdown(
                 id='percent_nums',
                 options=[
@@ -81,29 +87,31 @@ layout = html.Div([
                 value='Percentages',
         #         multi=True,
                 style={'width': '100%', 'margin-left': '0px'}
-            ))),     
+                )])),   
 
         
         # Choose between years
-            dbc.Col(html.Div(
+            dbc.Col(html.Div(children=[
+                html.Label(['Year:'], style={'font-weight': 'bold', "text-align": "center"}),
                 dcc.Dropdown(
-                id='year',
-                options=[{'label': i, 'value': i} for i in available_years],
-                value=['All'],
-                multi=True,
-                style={'width': '100%', 'margin-right': '10px'}
-                ))),
+                    id='year',
+                    options=[{'label': i, 'value': i} for i in available_years],
+                    value=['All'],
+                    multi=True,
+                    style={'width': '100%', 'margin-right': '10px'}
+                    )])),
           
         
         # Sort by category
-            dbc.Col(html.Div(
+            dbc.Col(html.Div(children=[
+                html.Label(['Sort by:'], style={'font-weight': 'bold', "text-align": "center"}),
                 dcc.Dropdown(
-                id='cat_sort',
-                options=[{'label': i, 'value': i} for i in available_categories],
-                value=['Econ_Acad'],
-#                 multi=True,
-                style={'width': '100%', 'margin-right': '10px'}
-                ))),
+                    id='cat_sort',
+                    options=[{'label': i, 'value': i} for i in available_sort_categories],
+                    value=['Econ_Acad'],
+    #                 multi=True,
+                    style={'width': '100%', 'margin-right': '10px'}
+                    )])),
         ]),          
         
     
@@ -128,25 +136,27 @@ layout = html.Div([
     
         
         # Choose University
-        dbc.Row([dbc.Col(html.Div(
-            dcc.Dropdown(
-                id='university',
-                options=[{'label': i, 'value': i} for i in available_uni],
-                value=['Yale', 'MIT', 'Harvard'],
-                multi=True,
-                style={'width': '100%', 'margin-left': '0px'}
-            ))),     
+        dbc.Row([dbc.Col(html.Div(children=[
+                html.Label(['University:'], style={'font-weight': 'bold', "text-align": "center"}),
+                dcc.Dropdown(
+                    id='university',
+                    options=[{'label': i, 'value': i} for i in available_uni],
+                    value=['Yale', 'MIT', 'Harvard'],
+                    multi=True,
+                    style={'width': '100%', 'margin-left': '0px'}
+                )])),     
 
         
         # Choose between categories
-            dbc.Col(html.Div(
+            dbc.Col(html.Div(children=[
+                html.Label(['Placement Category:'], style={'font-weight': 'bold', "text-align": "center"}),
                 dcc.Dropdown(
                 id='ranking',
-                options=[{'label': i, 'value': i} for i in available_categories],
+                options=[{'label': i, 'value': i} for i in available_trend_categories],
                 value=['Academia_1', 'Academia_2', 'Academia_3'],
                 multi=True,
                 style={'width': '100%', 'margin-right': '10px'}
-                ))),
+                )])),
         ]),   
         
 
@@ -161,24 +171,26 @@ layout = html.Div([
     
         
         # Choose University
-        dbc.Row([dbc.Col(html.Div(
-            dcc.Dropdown(
-                id='inst_university',
-                options=[{'label': i, 'value': i} for i in available_uni],
-                value=['Yale'],
-                multi=True,
-                style={'width': '100%', 'margin-left': '0px'}
-            ))),  
+        dbc.Row([dbc.Col(html.Div(children=[
+                html.Label(['University:'], style={'font-weight': 'bold', "text-align": "center"}),
+                dcc.Dropdown(
+                    id='inst_university',
+                    options=[{'label': i, 'value': i} for i in available_uni],
+                    value=['Yale'],
+                    multi=True,
+                    style={'width': '100%', 'margin-left': '0px'}
+                )])),  
                  
         # Choose between years
-            dbc.Col(html.Div(
+            dbc.Col(html.Div(children=[
+                html.Label(['Year:'], style={'font-weight': 'bold', "text-align": "center"}),
                 dcc.Dropdown(
-                id='inst_year',
-                options=[{'label': i, 'value': i} for i in available_inst_years],
-                value=['2021'],
-                multi=True,
-                style={'width': '100%', 'margin-right': '10px'}
-                ))),
+                    id='inst_year',
+                    options=[{'label': i, 'value': i} for i in available_inst_years],
+                    value=['2021'],
+                    multi=True,
+                    style={'width': '100%', 'margin-right': '10px'}
+                )])),
 
         ]),  
         
@@ -253,29 +265,48 @@ def update_graph(per_num, category, choice, uni, inst_uni, inst_year, sort_cat):
 
     # Trends
     if per_num == "Percentages": 
-        
+
         at = all_tiers.copy().reset_index()
         at = at.groupby(["University", "Ranking", 'Year']).size().reset_index()
         at = at.rename(columns = {0: "Freq"})
 
         numpy_array = at.to_numpy()
-        uni_year = {}
-        for row in range(numpy_array.shape[0]):
 
-            value = numpy_array[row,0]+str(numpy_array[row,2])
-            if value in uni_year:
-                uni_year[value]+=numpy_array[row,3]
-            else:
-                uni_year[value]=numpy_array[row,3]
+        if 'All' in uni:
 
-        for row in range(numpy_array.shape[0]):
+            year = {}
 
-            value = numpy_array[row,0]+str(numpy_array[row,2])
-            numpy_array[row,3]=numpy_array[row,3]*100/uni_year[value]
-        
+            for row in range(numpy_array.shape[0]):
+
+                value = str(numpy_array[row,2])
+                if value in year:
+                    year[value]+=numpy_array[row,3]
+                else:
+                    year[value]=numpy_array[row,3]
+
+            for row in range(numpy_array.shape[0]):
+                value = str(numpy_array[row,2])
+                numpy_array[row,3]=numpy_array[row,3]*100/year[value]
+
+
+        else: 
+
+            uni_year = {}
+
+            for row in range(numpy_array.shape[0]):
+                value = numpy_array[row,0]+str(numpy_array[row,2])
+                if value in uni_year:
+                    uni_year[value]+=numpy_array[row,3]
+                else:
+                    uni_year[value]=numpy_array[row,3]
+
+            for row in range(numpy_array.shape[0]):
+                value = numpy_array[row,0]+str(numpy_array[row,2])
+                numpy_array[row,3]=numpy_array[row,3]*100/uni_year[value]
+
         at = pd.DataFrame(numpy_array, columns = ["University", "Ranking", "Year", "Percentage"])
         at = at.groupby(["University", "Ranking", 'Year']).sum().reset_index()
-        
+
         trend_at = at.copy()
         if 'All' not in category:
             trend_at = trend_at[trend_at.Ranking.isin(category)]
@@ -288,14 +319,13 @@ def update_graph(per_num, category, choice, uni, inst_uni, inst_year, sort_cat):
             trend_at = trend_at[trend_at.University.isin(uni)]
             trend_at = trend_at.groupby(["Year", "University"]).sum().reset_index()
             trend_at = trend_at.rename(columns = {0: "Freq"})
+
         if 'All' in uni:
             trend_at_pivot = pd.pivot_table(trend_at, values = "Percentage", index = "Year")
 
         else:
             trend_at_pivot = pd.pivot_table(trend_at, values = "Percentage", index = "Year", columns="University")
 
-#         trend_at_pivot = trend_at_pivot.sort_values(['Year'], ascending = False)
-        
     else: 
         trend_at = all_tiers.copy().reset_index()
         if 'All' not in category:
